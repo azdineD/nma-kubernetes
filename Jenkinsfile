@@ -3,21 +3,27 @@ pipeline {
 
   environment {
     DOCKER_IMAGE = "lina2015/flask-nmak:latest"
-    KUBECONFIG = "/home/azureuser/.kube/config"  // à adapter selon ton utilisateur Jenkins
+    KUBECONFIG = "/home/azureuser/.kube/config" // à adapter si Jenkins tourne sous un autre utilisateur
   }
 
   stages {
-    stage('Clone') {
+
+    stage('Clone GitHub Repo') {
       steps {
         echo '📥 Clonage du dépôt GitHub...'
-        checkout scm
+        withCredentials([usernamePassword(credentialsId: 'github-access', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+          sh 'rm -rf nma-kubernetes'
+          sh 'git clone https://$GIT_USER:$GIT_TOKEN@github.com/azdineD/nma-kubernetes.git'
+        }
       }
     }
 
     stage('Build Docker Image') {
       steps {
-        echo '🐳 Construction de l’image Docker...'
-        sh 'docker build -t $DOCKER_IMAGE .'
+        dir('nma-kubernetes') {
+          echo '🐳 Construction de l’image Docker...'
+          sh 'docker build -t $DOCKER_IMAGE .'
+        }
       }
     }
 
@@ -32,26 +38,28 @@ pipeline {
 
     stage('Push Docker Image') {
       steps {
-        echo '📤 Push de l’image sur Docker Hub...'
+        echo '📤 Envoi de l’image vers Docker Hub...'
         sh 'docker push $DOCKER_IMAGE'
       }
     }
 
-    stage('Deploy to Kubernetes') {
+    stage('Déploiement Kubernetes') {
       steps {
-        echo '☸️ Déploiement dans Kubernetes...'
-        sh 'kubectl apply -f deployment.yaml'
-        sh 'kubectl apply -f service.yaml'
+        dir('nma-kubernetes') {
+          echo '☸️ Déploiement dans Kubernetes...'
+          sh 'kubectl apply -f deployment.yaml'
+          sh 'kubectl apply -f service.yaml'
+        }
       }
     }
   }
 
   post {
-    failure {
-      echo '❌ Échec du pipeline.'
-    }
     success {
       echo '✅ Pipeline terminé avec succès.'
+    }
+    failure {
+      echo '❌ Échec du pipeline.'
     }
   }
 }
