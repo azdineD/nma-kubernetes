@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nma-app
+  labels:
+    app: nma-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nma-app
+  template:
+    metadata:
+      labels:
+        app: nma-app
+    spec:
+      containers:
+      - name: nma-app
+        image: lina2015/flask-nmak:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: DATABASE_URL
+          value: "mysql+pymysql://nmauser:nmapassword@mysql:3306/nma_transport"
