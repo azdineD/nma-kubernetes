@@ -3,7 +3,7 @@ pipeline {
 
   environment {
     DOCKER_IMAGE = "lina2015/flask-nmak:latest"
-    KUBECONFIG = "/home/azureuser/.kube/config" // à adapter si Jenkins tourne sous un autre utilisateur
+    KUBECONFIG = "/var/lib/jenkins/.kube/config" // à adapter si Jenkins tourne sous un autre utilisateur
   }
 
   stages {
